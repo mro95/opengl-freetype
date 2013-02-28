@@ -46,8 +46,15 @@ void DrawText(const std::wstring& text,
 	glMatrixMode(GL_MODELVIEW);
 	glTranslatef(x_start, baseline, 0);
 
+	float texCoords[] = {
+			0.0f, 0.0f,
+			1.0f, 0.0f,
+			1.0f, 1.0f,
+			0.0f, 1.0f
+	};
+
 	for (unsigned int i = 0; i < text.length(); i++) {
-		FT_Load_Char(face, text[i], FT_LOAD_RENDER);
+		FT_Load_Char(face, text[i], FT_LOAD_RENDER|FT_LOAD_NO_HINTING);
 
 		GLuint texture;
 		glGenTextures(1, &texture);
@@ -62,11 +69,13 @@ void DrawText(const std::wstring& text,
 		glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 
 		unsigned int* buffer = GlyphTexture(face->glyph->bitmap, color);
+		int width = face->glyph->bitmap.width;
+		int height = face->glyph->bitmap.rows;
 		glTexImage2D(GL_TEXTURE_2D,
 			0,
 			GL_RGBA,
-			face->glyph->bitmap.pitch,
-			face->glyph->bitmap.rows,
+			width,
+			height,
 			0,
 			GL_RGBA,
 			GL_UNSIGNED_INT_8_8_8_8,
@@ -83,16 +92,32 @@ void DrawText(const std::wstring& text,
 
 		glMatrixMode(GL_MODELVIEW);
 
-		glTranslatef(face->glyph->metrics.horiBearingX /64.0f,
-					face->glyph->metrics.horiBearingY /64.0f,
+		glTranslatef(face->glyph->metrics.horiBearingX/64.0f,
+					face->glyph->metrics.horiBearingY/64.0f,
 					0);
 
-		glBegin(GL_TRIANGLE_FAN);
-		  glTexCoord2f(0.0f, 0.0f); glVertex2f(0, 0 );
-		  glTexCoord2f(1.0f, 0.0f); glVertex2f(face->glyph->bitmap.pitch, 0);
-		  glTexCoord2f(1.0f, 1.0f); glVertex2f(face->glyph->bitmap.pitch, -face->glyph->bitmap.rows);
-		  glTexCoord2f(0.0f, 1.0f); glVertex2f(0, -face->glyph->bitmap.rows);
-		glEnd();
+		float vertices[] = {
+				0.0f, 0.0f,
+				1.0f, 0.0f,
+				1.0f, -1.0f,
+				0.0f, -1.0f
+		};
+
+		for(int i = 0; i<8; i++)
+		{
+			if(i%2 == 0)
+				vertices[i] *= width;
+			else
+				vertices[i] *= height;
+		}
+
+		glEnableClientState(GL_VERTEX_ARRAY);
+		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+		glVertexPointer(2, GL_FLOAT, 0, vertices);
+		glTexCoordPointer(2, GL_FLOAT, 0, texCoords);
+
+		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
 		glDeleteTextures(1, &texture);
 
@@ -100,7 +125,7 @@ void DrawText(const std::wstring& text,
 		glPopMatrix();
 
 		glMatrixMode(GL_MODELVIEW);
-		glTranslatef(face->glyph->metrics.horiAdvance / 64.0f, 0, 0);
+		glTranslatef(face->glyph->metrics.horiAdvance/64.0f, 0, 0);
 	}
 
 	glMatrixMode(GL_MODELVIEW);
@@ -132,6 +157,8 @@ int main(int argc, char** args)
 	glLoadIdentity();
 	glOrtho(0.0, 800, 0.0, 600, 1.0f, 0.0f);
 
+	int count = 0;
+	long last_tick = SDL_GetTicks();
 
 	while(true){
 		SDL_Event event;
@@ -139,11 +166,10 @@ int main(int argc, char** args)
 		if(event.type == SDL_QUIT)
 			break;
 
-		int before = SDL_GetTicks();
-		glClearColor(0.0f,0.0f,0.0f,1.0f);
+		glClearColor(0.0f,0.5f,0.65f,1.0f);
 		glClear(GL_COLOR_BUFFER_BIT );
 
-		DrawText(L"ABCDEFG abcdefh 1234567",
+		DrawText(L"ABCDEFG สวัสดีปีใหม่  1234567",
 				50,
 				200,
 				0xffffffff,
@@ -151,7 +177,17 @@ int main(int argc, char** args)
 
 	    glFlush();
 
-	    std::cout<<1000/( SDL_GetTicks() - before) <<"FPS"<<std::endl;
+	    count++;
+	    long tick = SDL_GetTicks();
+	    if(tick - last_tick > 1000)
+	    {
+	    	float fps = count;
+	    	fps = (fps*1000)/(tick - last_tick);
+
+	    	std::cout<<fps<<"FPS"<<std::endl;
+	    	count = 0;
+	    	last_tick = tick;
+	    }
 
 		SDL_GL_SwapWindow(window);
 	}
