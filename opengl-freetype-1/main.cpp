@@ -140,7 +140,7 @@ int main(int argc, char** args)
 	SDL_Window* window;
 
 	window = SDL_CreateWindow("Test", SDL_WINDOWPOS_UNDEFINED,
-			SDL_WINDOWPOS_UNDEFINED, 800, 600,SDL_WINDOW_OPENGL );
+			SDL_WINDOWPOS_UNDEFINED, 1280, 720,SDL_WINDOW_OPENGL );
 
 	SDL_GLContext glcontext = SDL_GL_CreateContext(window);
 
@@ -148,10 +148,10 @@ int main(int argc, char** args)
 	FT_Init_FreeType(&library);
 
 	FT_Face face;
-	FT_New_Face(library, "./font/ThaiSansNeue-Black.otf", 0, &face);
-	FT_Set_Pixel_Sizes(face, 0, 64);
+	FT_New_Face(library, "DroidSansMono.ttf", 0, &face);
+	FT_Set_Pixel_Sizes(face, 0, 16);
 
-	glViewport(0,0,800,600);
+	glViewport(0,0,1280,720);
 
 	glMatrixMode(GL_PROJECTION|GL_MODELVIEW);
 	glLoadIdentity();
@@ -169,9 +169,9 @@ int main(int argc, char** args)
 		glClearColor(0.0f,0.5f,0.65f,1.0f);
 		glClear(GL_COLOR_BUFFER_BIT );
 
-		DrawText(L"ABCDEFG สวัสดีปีใหม่  1234567",
+		DrawText(L"The quick brown fox jumps over the lazy dog",
 				50,
-				200,
+				400,
 				0xffffffff,
 				face);
 
